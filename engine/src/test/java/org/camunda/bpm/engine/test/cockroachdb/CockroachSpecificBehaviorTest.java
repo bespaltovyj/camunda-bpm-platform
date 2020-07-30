@@ -57,4 +57,16 @@ public class CockroachSpecificBehaviorTest {
     fail("Test Job Execution retries on CRDB after a concurrent job changes job priorities and causes an OLE. " +
       "See ConcurrentJobExecutorTest#testCompletingUpdateJobDefinitionPriorityDuringExecution()");
   }
+
+  @Test
+  public void shouldRetryConcurrentHistoryCleanupJobAfterFirstJobSucceeds() {
+    fail("Test Job Execution retries on CRDB after a concurrent HistoruCleanupJob causes an OLE on " +
+      "an existing HistoryCleanupJob. See ConcurrentHistoryCleanupTest#testRunTwoHistoryCleanups()");
+  }
+
+  @Test
+  public void shouldRetryConcurrentExclusiveMessageCorrelation() {
+    fail("Test Job Execution retries on two concurrent exclusive message correlations. " +
+      "See CompetingMessageCorrelationTest#testConcurrentExclusiveCorrelation().");
+  }
 }
