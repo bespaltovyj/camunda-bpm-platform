@@ -201,23 +201,35 @@ public class CompetingMessageCorrelationTest extends ConcurrencyTestCase {
     // thread two correlates and acquires the exclusive lock on the event subscription of instance2
     // depending on the database and locking used, this may block thread2
     thread2.makeContinue();
+    Thread.sleep(3000); // wait a bit until t2 is blocked during the flush
 
     // thread 1 completes successfully
     thread1.waitUntilDone();
     assertNull(thread1.getException());
 
-    // thread2 should be able to continue at least after thread1 has finished and released its lock
-    thread2.waitForSync();
+    if (testRule.databaseSupportsIgnoredOLE()) {
+      // thread2 should be able to continue at least after thread1 has finished and released its lock
+      thread2.waitForSync();
 
-    // the service task was executed the second time
-    assertEquals(2, InvocationLogListener.getInvocations());
+      // thread 2 completes successfully
+      thread2.waitUntilDone();
 
-    // thread 2 completes successfully
-    thread2.waitUntilDone();
-    assertNull(thread2.getException());
+      assertNull(thread2.getException());
+      // the service task was executed the second time
+      assertEquals(2, InvocationLogListener.getInvocations());
+      // the follow-up task was reached in both instances
+      assertEquals(2, taskService.createTaskQuery().taskDefinitionKey("afterMessageUserTask").count());
+    } else {
+      // in CRDB, we don't call a second waitForSync since thread2
+      // never reaches the second sync due to the OLE
+      thread2.waitUntilDone(true);
+      assertThat(thread2.getException()).isInstanceOf(CrdbTransactionRetryException.class);
 
-    // the follow-up task was reached in both instances
-    assertEquals(2, taskService.createTaskQuery().taskDefinitionKey("afterMessageUserTask").count());
+      // the service task was executed the second time
+      assertEquals(1, InvocationLogListener.getInvocations());
+      // the follow-up task was reached in both instances
+      assertEquals(1, taskService.createTaskQuery().taskDefinitionKey("afterMessageUserTask").count());
+    }
   }
 
   /**

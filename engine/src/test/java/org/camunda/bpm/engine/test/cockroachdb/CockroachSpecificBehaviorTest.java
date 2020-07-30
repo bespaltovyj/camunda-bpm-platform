@@ -69,4 +69,10 @@ public class CockroachSpecificBehaviorTest {
     fail("Test Job Execution retries on two concurrent exclusive message correlations. " +
       "See CompetingMessageCorrelationTest#testConcurrentExclusiveCorrelation().");
   }
+
+  @Test
+  public void shouldRetryConcurrentExclusiveMessageCorrelationOnDifferentExecutions() {
+    fail("Test Job Execution retries on two concurrent exclusive message correlations on different executions. " +
+      "See CompetingMessageCorrelationTest#testConcurrentExclusiveCorrelationToDifferentExecutions().");
+  }
 }
