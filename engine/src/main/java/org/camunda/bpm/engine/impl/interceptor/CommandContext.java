@@ -44,6 +44,7 @@ import org.camunda.bpm.engine.impl.cmmn.entity.runtime.CaseSentryPartManager;
 import org.camunda.bpm.engine.impl.cmmn.operation.CmmnAtomicOperation;
 import org.camunda.bpm.engine.impl.context.Context;
 import org.camunda.bpm.engine.impl.context.ProcessApplicationContextUtil;
+import org.camunda.bpm.engine.impl.db.EnginePersistenceLogger;
 import org.camunda.bpm.engine.impl.db.entitymanager.DbEntityManager;
 import org.camunda.bpm.engine.impl.db.sql.DbSqlSession;
 import org.camunda.bpm.engine.impl.db.sql.DbSqlSessionFactory;
@@ -199,15 +200,8 @@ public class CommandContext {
             }
           } catch (Throwable exception) {
             
-            String databaseType = getProcessEngineConfiguration().getDatabaseType();
-
-            if (DbSqlSessionFactory.CRDB.equals(databaseType)
-              && ExceptionUtil.checkCrdbTransactionRetryException(exception)) {
-              // TODO: is this what we want?
-              // uses OptimisticLockingException and not CrdbTransactionRetryException, because
-              // these exceptions should not be caught by the CrdbTransactionRetryInterceptor
-              // TODO: should we distinguish the cases where we want to throw CrdbTransactionRetryException?
-              exception = new OptimisticLockingException("CockroachDB transaction failed on commit and needs to be retried: ", exception);
+            if (DbSqlSession.isCrdbConcurrencyConflict(exception)) {
+              exception = ProcessEngineLogger.PERSISTENCE_LOGGER.crdbTransactionRetryExceptionOnCommit(exception);
             }
             
             commandInvocationContext.trySetThrowable(exception);
