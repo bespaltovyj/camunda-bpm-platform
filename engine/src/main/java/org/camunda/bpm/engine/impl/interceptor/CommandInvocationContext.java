@@ -150,11 +150,7 @@ public class CommandInvocationContext {
 
   public void rethrow() {
     if (throwable != null) {
-      String databaseType = Context.getCommandContext().getProcessEngineConfiguration().getDatabaseType();
-      if (DbSqlSessionFactory.CRDB.equals(databaseType)
-        && ExceptionUtil.checkCrdbTransactionRetryException(throwable)) {
-        throw new CrdbTransactionRetryException("CockroachDB transaction needs to be retried: ", throwable);
-      } else if (throwable instanceof Error) {
+      if (throwable instanceof Error) {
         throw (Error) throwable;
       } else if (throwable instanceof PersistenceException) {
         throw new ProcessEngineException("Process engine persistence exception", throwable);
